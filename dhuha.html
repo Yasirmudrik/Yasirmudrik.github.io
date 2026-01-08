@@ -162,7 +162,6 @@
 
     <section id="rekap-section" class="hidden container mx-auto bg-white p-6 rounded-xl shadow-lg border border-sky-100">
       <h2 id="rekap-title" class="text-2xl font-bold mb-6 text-center text-sky-800 border-b pb-4"></h2>
-       
       <div class="flex flex-col sm:flex-row sm:justify-center sm:items-center sm:gap-4 mb-6 print:hidden bg-sky-50 p-4 rounded-lg">
         <div class="flex items-center gap-2">
             <label class="font-medium">Tahun:</label>
@@ -273,14 +272,19 @@
     // --- KONFIGURASI DAN DATA ---
     const classes = ['7a', '7b', '8a', '8b', '9a', '9b'];
     const romanMap = { '7': 'VII', '8': 'VIII', '9': 'IX' };
-     
-    // Struktur Data Utama
+    
+    // =========================================================================
+    // !!! TEMPEL URL GOOGLE SCRIPT ANDA DI ANTARA TANDA KUTIP DI BAWAH INI !!!
+    // =========================================================================
+    const SCRIPT_URL = 'MASUKKAN_URL_GOOGLE_SCRIPT_DISINI'; 
+    // Contoh: const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
+
+    
     let studentsData = {};
     let sentAttendanceData = {}; 
     let attendanceSentDate = {}; 
 
     // --- FUNGSI HELPER ---
-    // PERBAIKAN: Fungsi Generate ID manual agar kompatibel dengan semua browser/offline
     function generateID() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
@@ -298,14 +302,13 @@
         return (new Date(now - offset)).toISOString().slice(0, 10);
     }
 
-    // --- LOCAL STORAGE (PENYIMPANAN DATA) ---
+    // --- LOCAL STORAGE ---
     function saveDataLocal() {
         localStorage.setItem('dhuha_students', JSON.stringify(studentsData));
         localStorage.setItem('dhuha_history', JSON.stringify(sentAttendanceData));
         localStorage.setItem('dhuha_locks', JSON.stringify(attendanceSentDate));
     }
 
-    // PERBAIKAN: Fungsi Load Data dengan validasi agar tidak error jika ada kelas baru
     function loadDataLocal() {
         const storedStudents = localStorage.getItem('dhuha_students');
         const storedHistory = localStorage.getItem('dhuha_history');
@@ -316,7 +319,6 @@
 
         if (storedHistory) {
             sentAttendanceData = JSON.parse(storedHistory);
-            // Patch: Pastikan semua kelas yang ada di config tersedia di data history
             classes.forEach(c => {
                 if (!sentAttendanceData[c]) sentAttendanceData[c] = {};
             });
@@ -326,7 +328,6 @@
 
         if (storedLocks) {
             attendanceSentDate = JSON.parse(storedLocks);
-             // Patch: Pastikan semua kelas ada di data lock
              classes.forEach(c => {
                 if (attendanceSentDate[c] === undefined) attendanceSentDate[c] = null;
             });
@@ -338,10 +339,10 @@
     function initDefaultData() {
         classes.forEach((cls) => {
             studentsData[cls] = [];
-            // Data Dummy Awal
+            // Data Dummy
             for (let i = 0; i < 5; i++) {
                 studentsData[cls].push({
-                    id: generateID(), // Menggunakan fungsi ID baru
+                    id: generateID(),
                     name: `Siswa Contoh ${classCodeToRoman(cls)} ${i + 1}`,
                     totalHadir: 0, totalSakit: 0, totalAlpa: 0,
                     statusToday: null
@@ -354,7 +355,7 @@
     function resetDataLocal() {
         Swal.fire({
             title: 'Reset Semua Data?',
-            text: "Semua data siswa dan history absen akan dihapus! Aplikasi kembali kosong.",
+            text: "Data lokal akan dihapus. (Data di Google Sheet tetap aman)",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -372,11 +373,9 @@
     let currentClass = null;
     loadDataLocal();
 
-    // Set Tanggal di Header
     const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('date-display').textContent = new Date().toLocaleDateString('id-ID', optionsDate);
 
-    // Navigasi Tampilan
     const views = {
         menu: document.getElementById('menu-section'),
         class: document.getElementById('class-section'),
@@ -436,22 +435,10 @@
 
             const tr = document.createElement('tr');
             tr.className = "hover:bg-sky-50 transition border-b border-gray-100";
-
-            // Base Style Tombol
             const btnBase = "px-2 py-1 rounded text-xs sm:text-sm font-semibold shadow-sm transition-all duration-200 border flex items-center gap-1";
-             
-            // Logic Warna Tombol
-            const styleHadir = isHadir 
-                ? "bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-200" 
-                : "bg-white text-gray-500 border-gray-300 hover:bg-emerald-50 hover:text-emerald-600";
-             
-            const styleSakit = isSakit 
-                ? "bg-yellow-500 text-white border-yellow-600 ring-2 ring-yellow-200" 
-                : "bg-white text-gray-500 border-gray-300 hover:bg-yellow-50 hover:text-yellow-600";
-             
-            const styleAlpha = isAlpha 
-                ? "bg-rose-600 text-white border-rose-700 ring-2 ring-rose-200" 
-                : "bg-white text-gray-500 border-gray-300 hover:bg-rose-50 hover:text-rose-600";
+            const styleHadir = isHadir ? "bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-200" : "bg-white text-gray-500 border-gray-300 hover:bg-emerald-50 hover:text-emerald-600";
+            const styleSakit = isSakit ? "bg-yellow-500 text-white border-yellow-600 ring-2 ring-yellow-200" : "bg-white text-gray-500 border-gray-300 hover:bg-yellow-50 hover:text-yellow-600";
+            const styleAlpha = isAlpha ? "bg-rose-600 text-white border-rose-700 ring-2 ring-rose-200" : "bg-white text-gray-500 border-gray-300 hover:bg-rose-50 hover:text-rose-600";
 
             tr.innerHTML = `
                 <td class="px-4 py-3 text-center align-middle font-medium text-gray-500" data-label="No">${index + 1}</td>
@@ -461,15 +448,9 @@
                 <td class="px-4 py-3 text-center align-middle text-rose-600 font-bold" data-label="Total Alpa">${student.totalAlpa}</td>
                 <td class="px-4 py-3 text-center align-middle action-buttons" data-label="Aksi">
                     <div class="flex gap-2 justify-center flex-wrap">
-                        <button onclick="markStatus('${student.id}', 'H')" ${locked ? 'disabled' : ''} class="${btnBase} ${styleHadir} ${locked ? 'opacity-50 cursor-not-allowed' : ''}">
-                            <i class="fas fa-check"></i> <span class="hidden sm:inline">Hadir</span>
-                        </button>
-                        <button onclick="markStatus('${student.id}', 'S')" ${locked ? 'disabled' : ''} class="${btnBase} ${styleSakit} ${locked ? 'opacity-50 cursor-not-allowed' : ''}">
-                            <i class="fas fa-bed"></i> <span class="hidden sm:inline">Sakit</span>
-                        </button>
-                        <button onclick="markStatus('${student.id}', 'A')" ${locked ? 'disabled' : ''} class="${btnBase} ${styleAlpha} ${locked ? 'opacity-50 cursor-not-allowed' : ''}">
-                            <i class="fas fa-times"></i> <span class="hidden sm:inline">Alpha</span>
-                        </button>
+                        <button onclick="markStatus('${student.id}', 'H')" ${locked ? 'disabled' : ''} class="${btnBase} ${styleHadir} ${locked ? 'opacity-50 cursor-not-allowed' : ''}"><i class="fas fa-check"></i> <span class="hidden sm:inline">Hadir</span></button>
+                        <button onclick="markStatus('${student.id}', 'S')" ${locked ? 'disabled' : ''} class="${btnBase} ${styleSakit} ${locked ? 'opacity-50 cursor-not-allowed' : ''}"><i class="fas fa-bed"></i> <span class="hidden sm:inline">Sakit</span></button>
+                        <button onclick="markStatus('${student.id}', 'A')" ${locked ? 'disabled' : ''} class="${btnBase} ${styleAlpha} ${locked ? 'opacity-50 cursor-not-allowed' : ''}"><i class="fas fa-times"></i> <span class="hidden sm:inline">Alpha</span></button>
                     </div>
                 </td>
             `;
@@ -481,25 +462,26 @@
         if (isLocked()) return;
         const student = studentsData[currentClass].find(s => s.id === id);
         if (!student) return;
-
-        // Toggle logic (klik lagi untuk batal)
         student.statusToday = (student.statusToday === type) ? null : type;
-         
         saveDataLocal();
         renderStudentList();
     };
 
-    // --- PROSES KIRIM ---
+    // --- PROSES KIRIM DATA (FETCH) ---
     document.getElementById('btn-kirim').addEventListener('click', () => {
         if(isLocked()) return;
 
+        if (SCRIPT_URL.includes("MASUKKAN_URL")) {
+            Swal.fire('Error Konfigurasi', 'Anda belum memasukkan URL Google Script di dalam kode HTML!', 'error');
+            return;
+        }
+
         Swal.fire({
-            title: 'Kirim Absensi Dhuha?',
-            text: `Data ${classCodeToRoman(currentClass)} akan disimpan. Yang belum ditandai otomatis dianggap ALPHA.`,
+            title: 'Kirim ke Server?',
+            text: `Data ${classCodeToRoman(currentClass)} akan dikirim ke Google Sheet Database.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#0284c7',
-            cancelButtonColor: '#d33',
             confirmButtonText: 'Ya, Kirim!'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -508,55 +490,77 @@
         });
     });
 
-    // PERBAIKAN: Fungsi Kirim dengan Safety Check Lengkap
     function processAttendanceSubmission() {
+        const btnKirim = document.getElementById('btn-kirim');
+        const originalText = btnKirim.innerHTML;
+        
+        // 1. Ubah tombol jadi Loading
+        btnKirim.disabled = true;
+        btnKirim.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+
         const today = getTodayDate();
         const year = today.split('-')[0];
         const month = today.split('-')[1];
+        const dataToPush = []; 
 
-        // Safety Check: Pastikan struktur object ada
-        if (!sentAttendanceData[currentClass]) {
-            sentAttendanceData[currentClass] = {};
-        }
-        if (!sentAttendanceData[currentClass][year]) {
-            sentAttendanceData[currentClass][year] = {};
-        }
-        if (!sentAttendanceData[currentClass][year][month]) {
-            sentAttendanceData[currentClass][year][month] = [];
-        }
+        // 2. Siapkan Data
+        // Safety Check
+        if (!sentAttendanceData[currentClass]) sentAttendanceData[currentClass] = {};
+        if (!sentAttendanceData[currentClass][year]) sentAttendanceData[currentClass][year] = {};
+        if (!sentAttendanceData[currentClass][year][month]) sentAttendanceData[currentClass][year][month] = [];
 
         studentsData[currentClass].forEach(student => {
             let status = student.statusToday;
-            
-            // Logic: Jika kosong, otomatis Alpha
-            if (!status) status = 'A'; 
+            if (!status) status = 'A'; // Default Alpha
 
-            // Update Total Akumulatif
-            if (status === 'H') student.totalHadir++;
-            else if (status === 'S') student.totalSakit++;
-            else if (status === 'A') student.totalAlpa++;
-
-            // Simpan Log History
-            sentAttendanceData[currentClass][year][month].push({
-                date: today,
-                id: student.id,
-                name: student.name,
+            // Data untuk Google Sheet
+            dataToPush.push({
+                tanggal: today,
+                kelas: classCodeToRoman(currentClass),
+                nama: student.name,
                 status: status
             });
 
-            // Reset Harian
+            // Update statistik lokal
+            if (status === 'H') student.totalHadir++;
+            else if (status === 'S') student.totalSakit++;
+            else if (status === 'A') student.totalAlpa++;
+            
+            // Simpan history lokal juga
+            sentAttendanceData[currentClass][year][month].push({
+                date: today, id: student.id, name: student.name, status: status
+            });
+
             student.statusToday = null; 
         });
 
-        attendanceSentDate[currentClass] = today;
-        saveDataLocal();
+        // 3. Kirim ke Google Apps Script
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Penting agar tidak error CORS
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToPush)
+        })
+        .then(() => {
+            console.log("Data terkirim ke Google Sheet");
+            attendanceSentDate[currentClass] = today;
+            saveDataLocal();
 
-        Swal.fire('Terkirim!', 'Absensi Dhuha berhasil disimpan.', 'success');
-        updateLockStatus();
-        renderStudentList();
+            Swal.fire('Sukses!', 'Data berhasil masuk ke Database Sekolah.', 'success');
+            updateLockStatus();
+            renderStudentList();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Gagal!', 'Cek koneksi internet Anda.', 'error');
+        })
+        .finally(() => {
+            btnKirim.disabled = false;
+            btnKirim.innerHTML = originalText;
+        });
     }
 
-    // --- REKAP & CETAK ---
+    // --- REKAP & CRUD ---
     function populateYearSelect() {
         const select = document.getElementById('rekap-year');
         const currentYear = new Date().getFullYear();
@@ -574,31 +578,21 @@
         switchView('rekap');
         const tbody = document.getElementById('rekap-tbody');
         tbody.innerHTML = '';
-         
         const year = document.getElementById('rekap-year').value;
         const month = document.getElementById('rekap-month').value;
-         
-        document.getElementById('rekap-title').textContent = isGlobal 
-            ? `Rekap Dhuha Seluruh Siswa (${year})` 
-            : `Rekap Dhuha Kelas ${classCodeToRoman(currentClass)} (${year})`;
-
+        document.getElementById('rekap-title').textContent = isGlobal ? `Rekap Dhuha Seluruh Siswa (${year})` : `Rekap Dhuha Kelas ${classCodeToRoman(currentClass)} (${year})`;
         const thKelas = document.querySelectorAll('#rekap-table th')[2];
         thKelas.style.display = isGlobal ? 'table-cell' : 'none';
-
         let targetClasses = isGlobal ? classes : [currentClass];
         let no = 1;
 
         targetClasses.forEach(cls => {
             const students = studentsData[cls];
-             
             students.forEach(s => {
                 let h = s.totalHadir, sk = s.totalSakit, a = s.totalAlpa;
-
-                // Filter Bulan (hitung ulang dari history)
                 if (month) {
                     h = 0; sk = 0; a = 0;
                     const historyYear = sentAttendanceData[cls] ? sentAttendanceData[cls][year] : null;
-                    
                     if (historyYear && historyYear[month]) {
                         historyYear[month].forEach(log => {
                             if (log.id === s.id) {
@@ -609,87 +603,48 @@
                         });
                     }
                 }
-
                 const totalDays = h + sk + a;
                 const percentage = totalDays > 0 ? Math.round((h / totalDays) * 100) : 0;
-                
-                // Baris merah jika kehadiran < 50%
                 const rowClass = (percentage < 50 && totalDays > 0) ? "bg-rose-50 text-rose-900" : "hover:bg-sky-50";
-
                 const tr = document.createElement('tr');
                 tr.className = `border-b ${rowClass}`;
-                tr.innerHTML = `
-                    <td class="px-4 py-2 border border-gray-300 text-center">${no++}</td>
-                    <td class="px-4 py-2 border border-gray-300 font-medium">${s.name}</td>
-                    ${isGlobal ? `<td class="px-4 py-2 border border-gray-300 text-center">${classCodeToRoman(cls)}</td>` : ''}
-                    <td class="px-4 py-2 border border-gray-300 text-center font-bold text-emerald-700">${h}</td>
-                    <td class="px-4 py-2 border border-gray-300 text-center text-yellow-700">${sk}</td>
-                    <td class="px-4 py-2 border border-gray-300 text-center text-rose-700">${a}</td>
-                    <td class="px-4 py-2 border border-gray-300 text-center font-bold">${percentage}%</td>
-                `;
+                tr.innerHTML = `<td class="px-4 py-2 border border-gray-300 text-center">${no++}</td><td class="px-4 py-2 border border-gray-300 font-medium">${s.name}</td>${isGlobal ? `<td class="px-4 py-2 border border-gray-300 text-center">${classCodeToRoman(cls)}</td>` : ''}<td class="px-4 py-2 border border-gray-300 text-center font-bold text-emerald-700">${h}</td><td class="px-4 py-2 border border-gray-300 text-center text-yellow-700">${sk}</td><td class="px-4 py-2 border border-gray-300 text-center text-rose-700">${a}</td><td class="px-4 py-2 border border-gray-300 text-center font-bold">${percentage}%</td>`;
                 tbody.appendChild(tr);
             });
         });
     }
 
-    // --- EVENT LISTENERS ---
     document.getElementById('btn-rekap').addEventListener('click', () => showRekap(false));
     document.getElementById('btn-global-rekap').addEventListener('click', () => showRekap(true));
-    document.getElementById('btn-rekap-refresh').addEventListener('click', () => {
-        const isGlobal = document.getElementById('rekap-title').textContent.includes('Seluruh');
-        showRekap(isGlobal);
-    });
-     
+    document.getElementById('btn-rekap-refresh').addEventListener('click', () => { const isGlobal = document.getElementById('rekap-title').textContent.includes('Seluruh'); showRekap(isGlobal); });
     document.getElementById('btn-print').addEventListener('click', () => window.print());
 
-    // Tambah Siswa
-    document.getElementById('btn-tambah').addEventListener('click', () => {
-        document.getElementById('tambah-section').classList.remove('hidden');
-        document.getElementById('kelas-siswa').value = currentClass;
-    });
-     
+    document.getElementById('btn-tambah').addEventListener('click', () => { document.getElementById('tambah-section').classList.remove('hidden'); document.getElementById('kelas-siswa').value = currentClass; });
     document.getElementById('form-tambah').addEventListener('submit', (e) => {
         e.preventDefault();
         const nama = document.getElementById('nama-siswa').value;
         const kelas = document.getElementById('kelas-siswa').value;
-        
-        studentsData[kelas].push({
-            id: generateID(), // Menggunakan fungsi ID baru
-            name: nama,
-            totalHadir: 0, totalSakit: 0, totalAlpa: 0,
-            statusToday: null
-        });
+        studentsData[kelas].push({ id: generateID(), name: nama, totalHadir: 0, totalSakit: 0, totalAlpa: 0, statusToday: null });
         saveDataLocal();
-        
         Swal.fire('Berhasil', 'Siswa berhasil ditambahkan', 'success');
         document.getElementById('nama-siswa').value = '';
         document.getElementById('tambah-section').classList.add('hidden');
-        
         if (kelas === currentClass) renderStudentList();
     });
 
-    // Hapus Siswa
     document.getElementById('btn-hapus-siswa').addEventListener('click', () => {
         if(isLocked()) { Swal.fire('Terkunci', 'Tidak bisa menghapus setelah absen dikirim.', 'error'); return; }
-        
         const select = document.getElementById('hapus-siswa-select');
         select.innerHTML = '';
-        studentsData[currentClass].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.name;
-            select.appendChild(opt);
-        });
+        studentsData[currentClass].forEach(s => { const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name; select.appendChild(opt); });
         document.getElementById('hapus-siswa-section').classList.remove('hidden');
     });
 
     document.getElementById('btn-confirm-hapus').addEventListener('click', () => {
         const id = document.getElementById('hapus-siswa-select').value;
         if(!id) return;
-        
         studentsData[currentClass] = studentsData[currentClass].filter(s => s.id !== id);
         saveDataLocal();
-        
         document.getElementById('hapus-siswa-section').classList.add('hidden');
         renderStudentList();
         Swal.fire('Terhapus', 'Data siswa berhasil dihapus.', 'success');
